@@ -7,9 +7,9 @@ using HoloToolkit.Sharing.Tests;
 using HoloToolkit.Unity;
 using HoloToolkit.Unity.SpatialMapping;
 using UnityEngine;
-using UnityEngine.VR.WSA.Persistence;
-using UnityEngine.VR.WSA;
-using UnityEngine.VR.WSA.Sharing;
+
+
+
 
 public class AppShareControl : Singleton<AppShareControl>
 {
@@ -26,14 +26,14 @@ public class AppShareControl : Singleton<AppShareControl>
 
     [SerializeField] private TextMesh DebugText;    
 
-    private WorldAnchorStore anchorStore;
+    private UnityEngine.XR.WSA.Persistence.WorldAnchorStore anchorStore;
     private RoomManager roomManager;
     private RoomManagerAdapter roomManagerListener;
     private Room currentRoom;
     private byte[] anchorDownloadRawBytes;
     private List<byte> exportingAnchorBytes = new List<byte>();
     private string exportingAnchorName;
-    private WorldAnchorTransferBatch sharedAnchorInterface;
+    private UnityEngine.XR.WSA.Sharing.WorldAnchorTransferBatch sharedAnchorInterface;
     private XString storedAnchorString;
     private string remoteAnchorName;
 
@@ -103,7 +103,7 @@ public class AppShareControl : Singleton<AppShareControl>
         DebugDisplay(string.Format("\nnSharingServer-SessionsTracker: {0}", IsSharingSessionConnected.ToString()));
     }
 
-    private void AnchorStoreReady(WorldAnchorStore store)
+    private void AnchorStoreReady(UnityEngine.XR.WSA.Persistence.WorldAnchorStore store)
     {
         Debug.Log("WorldAnchorStore READY");
         anchorStore = store;
@@ -265,7 +265,7 @@ public class AppShareControl : Singleton<AppShareControl>
         // Setup Anchor System
         remoteAnchorName = string.Empty;
         CurrentState = AnchorManagementState.WaitingForAnchorStore;
-        WorldAnchorStore.GetAsync(AnchorStoreReady);
+        UnityEngine.XR.WSA.Persistence.WorldAnchorStore.GetAsync(AnchorStoreReady);
 
         // Setup Message Handlers
         CustomMessages2.Instance.MessageHandlers[CustomMessages2.AppShareControlMessageID.NewAnchorPlacement] = NewAnchorPlacementMessage;
@@ -387,7 +387,7 @@ public class AppShareControl : Singleton<AppShareControl>
         yield return null;
     }
 
-    private void ImportExportAnchorManager_OnTrackingChanged_Attaching(WorldAnchor self, bool located)
+    private void ImportExportAnchorManager_OnTrackingChanged_Attaching(UnityEngine.XR.WSA.WorldAnchor self, bool located)
     {
         if (located)
         {
@@ -417,7 +417,7 @@ public class AppShareControl : Singleton<AppShareControl>
                 Debug.LogFormat("Anchor Manager: Attempting to Load CACHED Anchor {0}", anchorName);
                 DebugDisplay(string.Format("\nAttempting to Load CACHED anchor {0}", anchorName));
 
-                WorldAnchor anchor = anchorStore.Load(ids[index], gameObject);
+                UnityEngine.XR.WSA.WorldAnchor anchor = anchorStore.Load(ids[index], gameObject);
                 if (anchor.isLocated)
                 {
                     // TODO: Notify Anchor is Located                    
@@ -491,7 +491,7 @@ public class AppShareControl : Singleton<AppShareControl>
 #endif
     }
 
-    private void Anchor_OnTrackingChanged_InitialAnchor(WorldAnchor self, bool located)
+    private void Anchor_OnTrackingChanged_InitialAnchor(UnityEngine.XR.WSA.WorldAnchor self, bool located)
     {
         if (located)
         {            
@@ -516,7 +516,7 @@ public class AppShareControl : Singleton<AppShareControl>
         CurrentState = AnchorManagementState.CreatingLocalAnchor;
 
         // Use existing Anchor or Create as needed
-        WorldAnchor anchor = gameObject.EnsureComponent<WorldAnchor>();
+        UnityEngine.XR.WSA.WorldAnchor anchor = gameObject.EnsureComponent<UnityEngine.XR.WSA.WorldAnchor>();
 
         IsLocalAnchor = true;
         IsAnchorConfigured = false;
@@ -537,14 +537,14 @@ public class AppShareControl : Singleton<AppShareControl>
         exportingAnchorBytes.AddRange(data);
     }
 
-    private void ExportLocalAnchorComplete(SerializationCompletionReason status)
+    private void ExportLocalAnchorComplete(UnityEngine.XR.WSA.Sharing.SerializationCompletionReason status)
     {
         // TODO: ENFORCE Anchor Size LIMIT
         DebugDisplay(string.Format("\nExport Anchor Size {0} - {1}/{2}: {3}",
             exportingAnchorName, exportingAnchorBytes.Count, MinTrustworthySerializedAnchorDataSize,
             exportingAnchorBytes.Count > MinTrustworthySerializedAnchorDataSize));
 
-        if (status == SerializationCompletionReason.Succeeded && exportingAnchorBytes.Count > MinTrustworthySerializedAnchorDataSize)
+        if (status == UnityEngine.XR.WSA.Sharing.SerializationCompletionReason.Succeeded && exportingAnchorBytes.Count > MinTrustworthySerializedAnchorDataSize)
         {
             Debug.LogFormat("Uploading anchor: {0}", exportingAnchorName);
             DebugDisplay(string.Format("\nUploading anchor: {0}", exportingAnchorName));
@@ -568,7 +568,7 @@ public class AppShareControl : Singleton<AppShareControl>
     {
         CurrentState = AnchorManagementState.ExportingLocalAnchor;
 
-        WorldAnchor anchor = gameObject.GetComponent<WorldAnchor>();
+        UnityEngine.XR.WSA.WorldAnchor anchor = gameObject.GetComponent<UnityEngine.XR.WSA.WorldAnchor>();
         string guidString = Guid.NewGuid().ToString();        
         exportingAnchorName = guidString;
 
@@ -578,9 +578,9 @@ public class AppShareControl : Singleton<AppShareControl>
             Debug.LogFormat("Exporting anchor: {0}", exportingAnchorName);
             DebugDisplay(string.Format("\nExporting anchor: {0}", exportingAnchorName));
 
-            sharedAnchorInterface = new WorldAnchorTransferBatch();
+            sharedAnchorInterface = new UnityEngine.XR.WSA.Sharing.WorldAnchorTransferBatch();
             sharedAnchorInterface.AddWorldAnchor(guidString, anchor);
-            WorldAnchorTransferBatch.ExportAsync(sharedAnchorInterface, WriteBuffer, ExportLocalAnchorComplete);
+            UnityEngine.XR.WSA.Sharing.WorldAnchorTransferBatch.ExportAsync(sharedAnchorInterface, WriteBuffer, ExportLocalAnchorComplete);
         }
         else
         {
@@ -591,9 +591,9 @@ public class AppShareControl : Singleton<AppShareControl>
         }
     }
 
-    private void AnchorImportComplete(SerializationCompletionReason status, WorldAnchorTransferBatch anchorBatch)
+    private void AnchorImportComplete(UnityEngine.XR.WSA.Sharing.SerializationCompletionReason status, UnityEngine.XR.WSA.Sharing.WorldAnchorTransferBatch anchorBatch)
     {
-        if (status == SerializationCompletionReason.Succeeded)
+        if (status == UnityEngine.XR.WSA.Sharing.SerializationCompletionReason.Succeeded)
         {
             if (anchorBatch.GetAllIds().Length > 0)
             {
@@ -604,7 +604,7 @@ public class AppShareControl : Singleton<AppShareControl>
                 Debug.LogFormat("Anchor Manager: Sucessfully Attached Remote Anchor: {0}", anchorEntry);
                 DebugDisplay(string.Format("\nSucessfully Attached Remote Anchor: {0}", anchorEntry));
 
-                WorldAnchor anchor = anchorBatch.LockObject(anchorEntry, gameObject);
+                UnityEngine.XR.WSA.WorldAnchor anchor = anchorBatch.LockObject(anchorEntry, gameObject);
                 anchorStore.Save(anchorEntry, anchor);
                 remoteAnchorName = string.Empty;
             }
@@ -638,7 +638,7 @@ public class AppShareControl : Singleton<AppShareControl>
 
     private void ClearPlacementObjectAnchors()
     {
-        foreach (var anchor in gameObject.GetComponents<WorldAnchor>())
+        foreach (var anchor in gameObject.GetComponents<UnityEngine.XR.WSA.WorldAnchor>())
         {
             DebugDisplay(string.Format("\nDeleting GameObject Anchor: {0} - {1}", anchor.name, anchor.gameObject.name));
             DestroyImmediate(anchor);
@@ -691,7 +691,7 @@ public class AppShareControl : Singleton<AppShareControl>
                 break;
             case AnchorManagementState.RemoteAnchorDataReady:
                 CurrentState = AnchorManagementState.RemoteAnchorAttaching;
-                WorldAnchorTransferBatch.ImportAsync(anchorDownloadRawBytes, AnchorImportComplete);
+                UnityEngine.XR.WSA.Sharing.WorldAnchorTransferBatch.ImportAsync(anchorDownloadRawBytes, AnchorImportComplete);
                 break;
             case AnchorManagementState.RemoteAnchorAttaching:
                 break;

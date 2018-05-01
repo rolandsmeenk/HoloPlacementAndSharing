@@ -5,7 +5,6 @@ using System;
 using System.Collections;
 using UnityEngine;
 using HoloToolkit.Unity;
-using UnityEngine.VR.WSA.Persistence;
 
 #if UNITY_WSA && !UNITY_EDITOR
 using System.Collections.Generic;
